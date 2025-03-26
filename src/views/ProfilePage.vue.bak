@@ -1,0 +1,450 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { supabase } from '../lib/supabase';
+
+const route = useRoute();
+const profissionalId = route.params.id;
+const loading = ref(true);
+const error = ref(null);
+
+// Dados do profissional
+const profissional = ref({
+  id: 0,
+  nome: '',
+  foto: '',
+  avaliacao: 0,
+  biografia: '',
+  cidade: '',
+  bairro: '',
+  uf: '',
+  especialidade: '',
+  whatsapp: '',
+});
+
+// Serviços oferecidos
+const servicos = ref([
+  { id: 1, nome: 'Massagem Relaxante', valor: 120, duracao: '60 min', descricao: 'Massagem com óleos essenciais para relaxamento completo.' },
+  { id: 2, nome: 'Massagem Terapêutica', valor: 150, duracao: '60 min', descricao: 'Técnica focada em aliviar dores musculares e tensões.' },
+  { id: 3, nome: 'Drenagem Linfática', valor: 180, duracao: '90 min', descricao: 'Técnica que estimula o sistema linfático e reduz inchaços.' },
+]);
+
+// Horários disponíveis
+const horarios = ref([
+  { id: 1, dia: 'Segunda-feira', horarios: ['09:00', '11:00', '14:00', '16:00'] },
+  { id: 2, dia: 'Terça-feira', horarios: ['09:00', '11:00', '14:00', '16:00'] },
+  { id: 3, dia: 'Quarta-feira', horarios: ['09:00', '11:00', '14:00', '16:00'] },
+  { id: 4, dia: 'Quinta-feira', horarios: ['09:00', '11:00', '14:00', '16:00'] },
+  { id: 5, dia: 'Sexta-feira', horarios: ['09:00', '11:00', '14:00', '16:00'] },
+]);
+
+// Galeria de imagens
+const galeria = ref([
+  { id: 1, url: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?q=80&w=2070', descricao: 'Espaço de atendimento' },
+  { id: 2, url: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?q=80&w=2044', descricao: 'Sessão de massagem' },
+  { id: 3, url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=2070', descricao: 'Produtos utilizados' },
+  { id: 4, url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=2070', descricao: 'Ambiente relaxante' },
+]);
+
+// Abas
+const activeTab = ref('sobre');
+
+// Formatar valor para moeda brasileira
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
+
+// Abrir WhatsApp
+const openWhatsApp = () => {
+  const message = `Olá, ${profissional.value.nome}! Vi seu perfil no Destack Terapias e gostaria de agendar um horário.`;
+  const encodedMessage = encodeURIComponent(message);
+  const whatsappNumber = profissional.value.whatsapp.replace(/\D/g, '');
+  window.open(`https://wa.me/55${whatsappNumber}?text=${encodedMessage}`, '_blank');
+};
+
+// Buscar dados do profissional
+const fetchProfissional = async () => {
+  loading.value = true;
+  try {
+    // Em um ambiente real, você buscaria os dados do profissional no Supabase
+    // Simulando dados para demonstração
+    profissional.value = {
+      id: Number(profissionalId),
+      nome: 'Ana Carolina Silva',
+      foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976',
+      avaliacao: 4.8,
+      biografia: 'Massoterapeuta com mais de 10 anos de experiência, especializada em técnicas de relaxamento e terapias holísticas. Formada pela Escola de Massoterapia de São Paulo, com certificações internacionais em diversas técnicas de massagem.',
+      cidade: 'São Paulo',
+      bairro: 'Pinheiros',
+      uf: 'SP',
+      especialidade: 'Massoterapia e Terapias Holísticas',
+      whatsapp: '11987654321',
+    };
+    
+    // Simulando um pequeno atraso para mostrar o loading
+    setTimeout(() => {
+      loading.value = false;
+    }, 500);
+  } catch (err) {
+    error.value = 'Erro ao carregar os dados do profissional';
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchProfissional();
+});
+</script>
+
+<template>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Loading -->
+    <div v-if="loading" class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-destack-pink"></div>
+    </div>
+    
+    <!-- Erro -->
+    <div v-else-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+      {{ error }}
+    </div>
+    
+    <!-- Conteúdo -->
+    <div v-else class="flex flex-col lg:flex-row gap-8">
+      <!-- Coluna da esquerda (perfil) -->
+      <div class="w-full lg:w-1/3">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden sticky top-8">
+          <!-- Cabeçalho com botão voltar -->
+          <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+            <button @click="$router.back()" class="text-gray-500 hover:text-gray-700 flex items-center text-sm font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              Voltar
+            </button>
+            
+            <div class="text-xs text-gray-400">Profissional verificado</div>
+          </div>
+          
+          <!-- Foto e informações do perfil -->
+          <div class="p-6 flex flex-col items-center text-center">
+            <div class="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-white mb-4">
+              <img 
+                v-if="profissional.foto" 
+                :src="profissional.foto" 
+                :alt="profissional.nome"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="flex items-center justify-center h-full w-full bg-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            </div>
+            
+            <h1 class="text-xl font-bold text-gray-800">{{ profissional.nome }}</h1>
+            <p class="text-destack-pink font-medium text-sm mt-1">{{ profissional.especialidade }}</p>
+            
+            <!-- Avaliação -->
+            <div class="flex items-center justify-center mt-3 mb-1">
+              <div class="flex">
+                <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" :class="[i <= Math.round(profissional.avaliacao) ? 'text-yellow-400' : 'text-gray-300']" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              </div>
+              <span class="text-gray-800 text-sm font-medium ml-2">{{ profissional.avaliacao.toFixed(1) }}</span>
+              <span class="text-gray-400 text-xs ml-1">(24 avaliações)</span>
+            </div>
+            
+            <!-- Localização -->
+            <div class="flex items-center justify-center mt-3 text-sm text-gray-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>{{ profissional.bairro }}, {{ profissional.cidade }} - {{ profissional.uf }}</span>
+            </div>
+            
+            <!-- Estatísticas -->
+            <div class="grid grid-cols-3 gap-4 w-full mt-6 border-t border-gray-100 pt-6">
+              <div class="text-center">
+                <div class="text-lg font-bold text-gray-800">24</div>
+                <div class="text-xs text-gray-500">Avaliações</div>
+              </div>
+              <div class="text-center border-x border-gray-100">
+                <div class="text-lg font-bold text-gray-800">156</div>
+                <div class="text-xs text-gray-500">Atendimentos</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-gray-800">3</div>
+                <div class="text-xs text-gray-500">Anos de exp.</div>
+              </div>
+            </div>
+            
+            <!-- Botão WhatsApp -->
+            <button 
+              @click="openWhatsApp"
+              class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg shadow-sm flex items-center justify-center transition-colors mt-6"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              Chamar no WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Coluna da direita (conteúdo) -->
+      <div class="w-full lg:w-2/3">
+        <!-- Navegação por abas -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+          <div class="border-b border-gray-100">
+            <nav class="flex">
+              <button
+                @click="activeTab = 'sobre'"
+                :class="[
+                  'py-4 px-6 font-medium text-sm whitespace-nowrap flex-1 transition-colors',
+                  activeTab === 'sobre'
+                    ? 'text-destack-pink border-b-2 border-destack-pink bg-pink-50/30'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ]"
+              >
+                Sobre
+              </button>
+              <button
+                @click="activeTab = 'servicos'"
+                :class="[
+                  'py-4 px-6 font-medium text-sm whitespace-nowrap flex-1 transition-colors',
+                  activeTab === 'servicos'
+                    ? 'text-destack-pink border-b-2 border-destack-pink bg-pink-50/30'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ]"
+              >
+                Serviços
+              </button>
+              <button
+                @click="activeTab = 'horarios'"
+                :class="[
+                  'py-4 px-6 font-medium text-sm whitespace-nowrap flex-1 transition-colors',
+                  activeTab === 'horarios'
+                    ? 'text-destack-pink border-b-2 border-destack-pink bg-pink-50/30'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ]"
+              >
+                Horários
+              </button>
+              <button
+                @click="activeTab = 'galeria'"
+                :class="[
+                  'py-4 px-6 font-medium text-sm whitespace-nowrap flex-1 transition-colors',
+                  activeTab === 'galeria'
+                    ? 'text-destack-pink border-b-2 border-destack-pink bg-pink-50/30'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ]"
+              >
+                Galeria
+              </button>
+            </nav>
+          </div>
+
+        <!-- Conteúdo das abas -->
+        <div class="p-6">
+          <!-- Aba Sobre -->
+          <div v-if="activeTab === 'sobre'">
+            <div class="mb-6">
+              <h2 class="text-xl font-semibold text-gray-800 mb-4">Biografia</h2>
+              <p class="text-gray-600 leading-relaxed">{{ profissional.biografia }}</p>
+            </div>
+            
+            <!-- Certificações -->
+            <div class="mt-8">
+              <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-destack-pink" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                Certificações
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 rounded-lg p-4 flex items-start">
+                  <div class="bg-destack-pink/10 rounded-lg p-2 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-destack-pink" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-800 text-sm">Especialização em Massoterapia</h4>
+                    <p class="text-gray-500 text-xs mt-1">Escola de Massoterapia de São Paulo</p>
+                  </div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 flex items-start">
+                  <div class="bg-destack-pink/10 rounded-lg p-2 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-destack-pink" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552c.25.112.526.174.818.174.292 0 .569-.062.818-.174L5 10.274zm10 0l-.818 2.552c.25.112.526.174.818.174.292 0 .569-.062.818-.174L15 10.274z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-800 text-sm">Certificação em Terapias Holísticas</h4>
+                    <p class="text-gray-500 text-xs mt-1">Instituto Brasileiro de Terapias Naturais</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aba Serviços -->
+          <div v-else-if="activeTab === 'servicos'">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-xl font-semibold text-gray-800">Serviços Oferecidos</h2>
+              <span class="text-sm text-gray-500">{{ servicos.length }} serviços disponíveis</span>
+            </div>
+            
+            <div class="space-y-4">
+              <div v-for="servico in servicos" :key="servico.id" class="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-sm transition-shadow">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                      {{ servico.nome }}
+                      <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">Disponível</span>
+                    </h3>
+                    <p class="text-gray-600 mt-2 text-sm">{{ servico.descricao }}</p>
+                    <div class="mt-3 flex items-center text-sm text-gray-500">
+                      <div class="flex items-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {{ servico.duracao }}
+                      </div>
+                      <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {{ formatCurrency(servico.valor) }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-4 sm:mt-0">
+                    <button 
+                      @click="openWhatsApp"
+                      class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm flex items-center justify-center transition-colors text-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      Agendar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aba Horários -->
+          <div v-else-if="activeTab === 'horarios'">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-xl font-semibold text-gray-800">Agenda da Semana</h2>
+              <div class="flex items-center text-sm">
+                <div class="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
+                <span class="text-gray-600">Disponível</span>
+              </div>
+            </div>
+            
+            <div class="bg-white border border-gray-100 rounded-xl p-5">
+              <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
+                <div 
+                  v-for="dia in horarios" 
+                  :key="dia.id"
+                  class="border border-gray-100 rounded-lg overflow-hidden"
+                >
+                  <!-- Cabeçalho do dia -->
+                  <div class="bg-gray-50 py-2 px-3 text-center border-b border-gray-100">
+                    <h3 class="font-medium text-gray-800 text-sm">{{ dia.dia && dia.dia.includes('-') ? dia.dia.split('-')[0] : dia.dia }}</h3>
+                  </div>
+                  
+                  <!-- Horários -->
+                  <div class="p-2">
+                    <div 
+                      v-for="(horario, index) in dia.horarios" 
+                      :key="index"
+                      class="mb-1 last:mb-0"
+                    >
+                      <button 
+                        @click="openWhatsApp"
+                        class="w-full text-sm py-2 px-1 rounded-md text-center bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                      >
+                        {{ horario }}
+                      </button>
+                    </div>
+                    
+                    <!-- Se não houver horários disponíveis -->
+                    <div v-if="dia.horarios.length === 0" class="py-2 text-center text-xs text-gray-400">
+                      Indisponível
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-6 bg-blue-50 rounded-lg p-4 text-sm text-blue-800">
+                <div class="flex">
+                  <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="ml-3">
+                    <p>Clique em um horário para agendar diretamente pelo WhatsApp. Os horários exibidos estão sujeitos à confirmação de disponibilidade.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aba Galeria -->
+          <div v-else-if="activeTab === 'galeria'">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-xl font-semibold text-gray-800">Galeria de Fotos</h2>
+              <span v-if="galeria && galeria.length > 0" class="text-sm text-gray-500">{{ galeria.length }} imagens</span>
+              <span v-else class="text-sm text-gray-500">Nenhuma imagem</span>
+            </div>
+            
+            <div class="bg-white border border-gray-100 rounded-xl p-5">
+              <!-- Imagem principal -->
+              <div v-if="galeria && galeria.length > 0" class="mb-4 rounded-lg overflow-hidden aspect-video">
+                <img 
+                  :src="galeria[0].url" 
+                  :alt="galeria[0].descricao"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div v-else class="mb-4 rounded-lg overflow-hidden aspect-video bg-gray-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              
+              <!-- Miniaturas -->
+              <div v-if="galeria && galeria.length > 0" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                <div 
+                  v-for="imagem in galeria" 
+                  :key="imagem.id"
+                  class="group relative rounded-lg overflow-hidden bg-gray-100 aspect-square cursor-pointer"
+                >
+                  <img 
+                    :src="imagem.url" 
+                    :alt="imagem.descricao"
+                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                </div>
+              </div>
+              <div v-else class="text-center py-4 text-gray-500 text-sm">
+                Nenhuma imagem disponível na galeria.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
