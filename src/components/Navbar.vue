@@ -1,11 +1,31 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import authService from '../services/auth'
 
+const router = useRouter()
 const menuItems = ['Teste de menu', 'Teste de menu', 'Teste de menu', 'Teste de menu']
 const mobileMenuOpen = ref(false)
 
+// Verificar se o usuário está autenticado
+const isAuthenticated = computed(() => authService.isAuthenticated.value)
+const currentUser = computed(() => authService.currentUser.value)
+
 const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+const navigateToLogin = () => {
+  router.push('/login')
+}
+
+const navigateToHome = () => {
+  router.push('/')
+}
+
+const handleLogout = () => {
+  authService.logout()
+  router.push('/')
 }
 </script>
 
@@ -13,7 +33,7 @@ const toggleMobileMenu = () => {
   <nav class="relative z-10 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
     <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
       <div class="flex items-center">
-        <img src="https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/alanaland-9pr07u/assets/872bk0nz6ef1/logo.png" alt="Destack Terapias" class="h-8 sm:h-10" />
+        <img @click="navigateToHome" src="https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/alanaland-9pr07u/assets/872bk0nz6ef1/logo.png" alt="Destack Terapias" class="h-8 sm:h-10 cursor-pointer" />
       </div>
       
       <!-- Menu desktop -->
@@ -28,12 +48,25 @@ const toggleMobileMenu = () => {
       
       <!-- Botões de ação -->
       <div class="hidden sm:flex items-center space-x-3 md:space-x-4">
-        <button class="border border-destack-pink text-gray-700 px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap">
-          Entrar
-        </button>
-        <button class="bg-destack-pink text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-pink-700 transition-colors text-sm whitespace-nowrap">
-          Cadastrar
-        </button>
+        <!-- Usuário não autenticado -->
+        <template v-if="!isAuthenticated">
+          <button @click="navigateToLogin" class="border border-destack-pink text-gray-700 px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap">
+            Entrar
+          </button>
+          <button class="bg-destack-pink text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-pink-700 transition-colors text-sm whitespace-nowrap">
+            Cadastrar
+          </button>
+        </template>
+        
+        <!-- Usuário autenticado -->
+        <template v-else>
+          <div class="flex items-center space-x-3">
+            <span class="text-gray-700 text-sm">Olá, {{ currentUser?.email }}</span>
+            <button @click="handleLogout" class="border border-destack-pink text-gray-700 px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm whitespace-nowrap">
+              Sair
+            </button>
+          </div>
+        </template>
       </div>
       
       <!-- Botão mobile menu -->
@@ -56,12 +89,25 @@ const toggleMobileMenu = () => {
         </a>
       </div>
       <div class="flex items-center space-x-3 mt-4 pt-3 border-t border-gray-100">
-        <button class="flex-1 border border-destack-pink text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm">
-          Entrar
-        </button>
-        <button class="flex-1 bg-destack-pink text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors text-sm">
-          Cadastrar
-        </button>
+        <!-- Usuário não autenticado (mobile) -->
+        <template v-if="!isAuthenticated">
+          <button @click="navigateToLogin" class="flex-1 border border-destack-pink text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+            Entrar
+          </button>
+          <button class="flex-1 bg-destack-pink text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors text-sm">
+            Cadastrar
+          </button>
+        </template>
+        
+        <!-- Usuário autenticado (mobile) -->
+        <template v-else>
+          <div class="w-full">
+            <div class="text-gray-700 text-sm mb-2">Olá, {{ currentUser?.email }}</div>
+            <button @click="handleLogout" class="w-full border border-destack-pink text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+              Sair
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </nav>

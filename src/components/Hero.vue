@@ -139,7 +139,7 @@ const limparErro = () => {
 
     <!-- Tabs de filtro centralizadas -->
     <div class="flex justify-center mb-6 sm:mb-8">
-      <div class="bg-gray-100 rounded-lg p-1.5 flex items-center justify-center space-x-2 sm:space-x-3 max-w-[340px] w-full h-[56px]">
+      <div class="bg-[#F7F7F7] rounded-lg p-1.5 flex items-center justify-center space-x-2 sm:space-x-3 max-w-[340px] w-full h-[56px]">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -181,24 +181,60 @@ const limparErro = () => {
       </div>
     </div>
 
-    <!-- Estado de carregamento -->
-    <div v-if="loading" class="text-center py-6 sm:py-8">
-      <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-destack-pink mx-auto"></div>
-      <p class="text-gray-600 mt-3 sm:mt-4 text-sm sm:text-base">Carregando profissionais...</p>
-    </div>
+    <!-- Contêiner com altura fixa para evitar o efeito sanfona -->
+    <div class="min-h-[180px] relative pb-8">
+      <!-- Estado de carregamento -->
+      <div v-if="loading" class="text-center py-6 sm:py-8 absolute inset-0 flex flex-col items-center justify-center bg-white">
+        <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-destack-pink mx-auto"></div>
+        <p class="text-gray-600 mt-3 sm:mt-4 text-sm sm:text-base">Carregando profissionais...</p>
+      </div>
 
-    <!-- Grid de cards de profissionais -->
-    <div v-else-if="!error && profissionais.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-      <ResourceCard
-        v-for="profissional in profissionais"
-        :key="profissional.profissional_id"
-        :profissional="profissional"
-      />
-    </div>
-    
-    <!-- Mensagem de nenhum resultado -->
-    <div v-else-if="!error && profissionais.length === 0" class="text-center py-6 sm:py-8">
-      <p class="text-gray-600 text-sm sm:text-base">Nenhum profissional encontrado para esta categoria.</p>
+      <!-- Grid de cards de profissionais com efeito de transição -->
+      <transition-group 
+        name="accordion" 
+        tag="div" 
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 w-full"
+        v-if="!error && profissionais.length > 0"
+      >
+        <ResourceCard
+          v-for="profissional in profissionais"
+          :key="profissional.profissional_id"
+          :profissional="profissional"
+        />
+      </transition-group>
+      
+      <!-- Mensagem de nenhum resultado -->
+      <transition name="fade">
+        <div v-if="!error && !loading && profissionais.length === 0" class="text-center py-6 sm:py-8 absolute inset-0 flex items-center justify-center bg-white">
+          <p class="text-gray-600 text-sm sm:text-base">Nenhum profissional encontrado para esta categoria.</p>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Efeito sanfona para os cards */
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: all 0.5s ease;
+}
+.accordion-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.accordion-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+/* Efeito de fade para mensagens */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

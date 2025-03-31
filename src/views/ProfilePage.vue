@@ -22,6 +22,9 @@ const profissional = ref({
   whatsapp: '',
 });
 
+// Certificados do profissional
+const certificados = ref([]);
+
 // Serviços oferecidos
 const servicos = ref([
   { id: 1, nome: 'Massagem Relaxante', valor: 120, duracao: '60 min', descricao: 'Massagem com óleos essenciais para relaxamento completo.' },
@@ -38,12 +41,12 @@ const horarios = ref([
   { id: 5, dia: 'Sexta-feira', horarios: ['09:00', '11:00', '14:00', '16:00'] },
 ]);
 
-// Galeria de imagens
+// Galeria de imagens - usando cores em vez de URLs externas para evitar problemas
 const galeria = ref([
-  { id: 1, url: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?q=80&w=2070', descricao: 'Espaço de atendimento' },
-  { id: 2, url: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?q=80&w=2044', descricao: 'Sessão de massagem' },
-  { id: 3, url: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=2070', descricao: 'Produtos utilizados' },
-  { id: 4, url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=2070', descricao: 'Ambiente relaxante' },
+  { id: 1, cor: 'bg-blue-200', descricao: 'Espaço de atendimento' },
+  { id: 2, cor: 'bg-green-200', descricao: 'Sessão de massagem' },
+  { id: 3, cor: 'bg-purple-200', descricao: 'Produtos utilizados' },
+  { id: 4, cor: 'bg-yellow-200', descricao: 'Ambiente relaxante' },
 ]);
 
 // Controle da imagem principal da galeria
@@ -77,28 +80,63 @@ const openWhatsApp = () => {
 const fetchProfissional = async () => {
   loading.value = true;
   try {
-    // Em um ambiente real, você buscaria os dados do profissional no Supabase
-    // Simulando dados para demonstração
-    profissional.value = {
-      id: Number(profissionalId),
-      nome: 'Ana Carolina Silva',
-      foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976',
-      avaliacao: 4.8,
-      biografia: 'Massoterapeuta com mais de 10 anos de experiência, especializada em técnicas de relaxamento e terapias holísticas. Formada pela Escola de Massoterapia de São Paulo, com certificações internacionais em diversas técnicas de massagem.',
-      cidade: 'São Paulo',
-      bairro: 'Pinheiros',
-      uf: 'SP',
-      especialidade: 'Massoterapia e Terapias Holísticas',
-      whatsapp: '11987654321',
-    };
+    console.log('Buscando profissional com ID:', profissionalId);
     
-    // Simulando um pequeno atraso para mostrar o loading
-    setTimeout(() => {
-      loading.value = false;
-    }, 500);
+    // Buscar dados do profissional no Supabase
+    const { data: profissionalData, error: profissionalError } = await supabase
+      .from('profissionais')
+      .select('*')
+      .eq('id', profissionalId)
+      .single();
+    
+    if (profissionalError) throw profissionalError;
+    
+    if (profissionalData) {
+      profissional.value = {
+        id: profissionalData.id,
+        nome: profissionalData.nome,
+        foto: profissionalData.foto,
+        avaliacao: profissionalData.avaliacao || 0,
+        biografia: profissionalData.descricao || 'Sem biografia disponível',
+        cidade: 'São Paulo', // Dados fictícios para campos que não existem na tabela
+        bairro: 'Pinheiros',
+        uf: 'SP',
+        especialidade: 'Massoterapia e Terapias Holísticas',
+        whatsapp: profissionalData.contato || '11987654321',
+      };
+      
+      // Buscar certificados do profissional
+      await fetchCertificados(profissionalData.id);
+    }
+    
+    loading.value = false;
   } catch (err) {
+    console.error('Erro ao carregar os dados do profissional:', err);
     error.value = 'Erro ao carregar os dados do profissional';
     loading.value = false;
+  }
+};
+
+// Buscar certificados do profissional
+const fetchCertificados = async (profissionalId) => {
+  try {
+    console.log('Buscando certificados para o profissional ID:', profissionalId);
+    
+    const { data, error: certError } = await supabase
+      .from('certificados')
+      .select('*')
+      .eq('profissional_id', profissionalId);
+    
+    if (certError) throw certError;
+    
+    // Atualiza a lista de certificados com os dados do banco
+    // Se não houver certificados, será uma lista vazia
+    certificados.value = data || [];
+    
+    console.log('Certificados encontrados:', certificados.value.length);
+  } catch (err) {
+    console.error('Erro ao carregar certificados:', err);
+    certificados.value = []; // Garante que será uma lista vazia em caso de erro
   }
 };
 
@@ -243,30 +281,29 @@ onMounted(() => {
             
             <div>
               <h2 class="text-xl font-semibold text-gray-800 mb-4">Certificações</h2>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="bg-white border border-gray-100 rounded-xl p-4 flex items-start">
-                  <div class="bg-blue-50 rounded-lg p-3 mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div v-if="certificados.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div 
+                  v-for="(certificado, index) in certificados" 
+                  :key="certificado.id"
+                  class="bg-white border border-gray-100 rounded-xl p-4 flex items-start"
+                >
+                  <div :class="[index % 2 === 0 ? 'bg-blue-50 text-blue-500' : 'bg-green-50 text-green-500', 'rounded-lg p-3 mr-3']">
+                    <svg v-if="index % 2 === 0" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
-                  </div>
-                  <div>
-                    <h3 class="font-medium text-gray-800">Massoterapia Avançada</h3>
-                    <p class="text-sm text-gray-500 mt-1">Escola de Massoterapia de São Paulo</p>
-                  </div>
-                </div>
-                
-                <div class="bg-white border border-gray-100 rounded-xl p-4 flex items-start">
-                  <div class="bg-green-50 rounded-lg p-3 mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                     </svg>
                   </div>
                   <div>
-                    <h3 class="font-medium text-gray-800">Terapias Holísticas</h3>
-                    <p class="text-sm text-gray-500 mt-1">Instituto de Terapias Naturais</p>
+                    <h3 class="font-medium text-gray-800">{{ certificado.nome }}</h3>
+                    <p class="text-sm text-gray-500 mt-1">{{ certificado.instituicao }}</p>
+                    <p class="text-xs text-gray-400 mt-1">Emitido em: {{ new Date(certificado.data_emissao).toLocaleDateString('pt-BR') }}</p>
                   </div>
                 </div>
+              </div>
+              <div v-else class="text-center py-8 text-gray-500">
+                Nenhuma certificação encontrada para este profissional.
               </div>
             </div>
           </div>
@@ -379,11 +416,11 @@ onMounted(() => {
             <div class="bg-white border border-gray-100 rounded-xl p-5">
               <!-- Imagem principal -->
               <div v-if="galeria && galeria.length > 0" class="mb-4 rounded-lg overflow-hidden aspect-video">
-                <img 
-                  :src="galeria[imagemPrincipal].url" 
-                  :alt="galeria[imagemPrincipal].descricao"
-                  class="w-full h-full object-cover transition-all duration-300"
-                />
+                <div 
+                  :class="[galeria[imagemPrincipal].cor, 'w-full h-full flex items-center justify-center transition-all duration-300']"
+                >
+                  <span class="text-gray-700 font-medium">{{ galeria[imagemPrincipal].descricao }}</span>
+                </div>
               </div>
               <div v-else class="mb-4 rounded-lg overflow-hidden aspect-video bg-gray-100 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -397,14 +434,14 @@ onMounted(() => {
                   v-for="(imagem, index) in galeria" 
                   :key="imagem.id"
                   @click="trocarImagemPrincipal(index)"
-                  class="group relative rounded-lg overflow-hidden bg-gray-100 aspect-square cursor-pointer"
+                  class="group relative rounded-lg overflow-hidden aspect-square cursor-pointer"
                   :class="{ 'ring-2 ring-destack-pink': index === imagemPrincipal }"
                 >
-                  <img 
-                    :src="imagem.url" 
-                    :alt="imagem.descricao"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
+                  <div 
+                    :class="[imagem.cor, 'w-full h-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300']"
+                  >
+                    <span class="text-xs text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300">{{ index + 1 }}</span>
+                  </div>
                   <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
                 </div>
               </div>
