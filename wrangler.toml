@@ -1,4 +1,4 @@
-name = "project-destack"
+name = "dastack"
 type = "javascript"
 usage_model = "bundled"
 compatibility_date = "2025-03-31"
