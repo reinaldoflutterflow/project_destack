@@ -6,13 +6,13 @@ import path from 'path'
 const secureLogs = () => {
   return {
     name: 'secure-logs',
-    configureServer(server) {
-      server.middlewares.use((req, res, next) => {
+    configureServer(server: any) {
+      server.middlewares.use((req: any, _res: any, next: any) => {
         // Intercepta o console.log e console.error no cliente
         if (req.url?.endsWith('.html')) {
           server.transformIndexHtml.handlers.push({
             order: 'pre',
-            handler: (html) => {
+            handler: (html: string) => {
               return html.replace(
                 '</head>',
                 `<script>

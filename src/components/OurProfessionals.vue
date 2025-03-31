@@ -40,7 +40,7 @@ const profissionais = ref([
                 <div class="ml-2 text-xs text-gray-600">
                   <span class="font-medium">{{ profissionais[0].percentual }}% {{ profissionais[0].tipo }}</span>, 
                   {{ profissionais[1].percentual }}% {{ profissionais[1].tipo }}, 
-                  {{ profissionais[2].percentual }}% {{ profissionais[2].tipo }} peoples
+                  {{ profissionais[2].percentual }}% {{ profissionais[2].tipo }} pessoas
                 </div>
               </div>
             </div>
@@ -49,20 +49,20 @@ const profissionais = ref([
         <!-- Lado direito - Texto -->
         <div class="w-full lg:w-1/2 px-4 py-16 lg:py-24 lg:px-16 mx-auto max-w-2xl lg:max-w-none">
           <div class="inline-block px-3 py-1 bg-white rounded-full text-sm font-medium text-black mb-6">
-            Our People ™
+            Nossos Especialistas ™
           </div>
           
           <h2 class="text-4xl sm:text-5xl font-bold text-white mb-6">
-            At Destack Terapias,<br />
-            we hire for <span class="text-white">skills</span>
+            Na Destack Terapias,<br />
+            contratamos por <span class="text-white">competência</span>
           </h2>
           
           <p class="text-white mb-8 text-lg">
-            And shared values and that's pretty much it. We know that being brilliant in your role has nothing to do with who you love or what you believe.
+            E valores compartilhados, e isso é praticamente tudo. Sabemos que ser excelente em sua função não tem nada a ver com quem você ama ou no que acredita.
           </p>
           
           <a href="/profissional/1" class="inline-flex items-center px-6 py-3 bg-white text-destack-pink font-medium rounded-lg hover:bg-white/90 transition-colors">
-            View our people
+            Conheça nossos profissionais
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
             </svg>

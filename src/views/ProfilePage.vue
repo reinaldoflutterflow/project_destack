@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { supabase } from '../lib/supabase';
+import CityMap from '../components/CityMap.vue';
 
 const route = useRoute();
 const profissionalId = route.params.id;
@@ -21,6 +22,9 @@ const profissional = ref({
   especialidade: '',
   whatsapp: '',
 });
+
+// Áreas de atuação do profissional
+const areasAtuacao = ref([]);
 
 // Certificados do profissional
 const certificados = ref([]);
@@ -98,7 +102,7 @@ const fetchProfissional = async () => {
         foto: profissionalData.foto,
         avaliacao: profissionalData.avaliacao || 0,
         biografia: profissionalData.descricao || 'Sem biografia disponível',
-        cidade: 'São Paulo', // Dados fictícios para campos que não existem na tabela
+        cidade: 'São Paulo', // Valor padrão até buscarmos as áreas de atuação
         bairro: 'Pinheiros',
         uf: 'SP',
         especialidade: 'Massoterapia e Terapias Holísticas',
@@ -107,6 +111,9 @@ const fetchProfissional = async () => {
       
       // Buscar certificados do profissional
       await fetchCertificados(profissionalData.id);
+      
+      // Buscar áreas de atuação do profissional
+      await fetchAreasAtuacao(profissionalData.id);
     }
     
     loading.value = false;
@@ -139,6 +146,66 @@ const fetchCertificados = async (profissionalId) => {
     certificados.value = []; // Garante que será uma lista vazia em caso de erro
   }
 };
+
+// Buscar áreas de atuação do profissional
+const fetchAreasAtuacao = async (profissionalId: any) => {
+  try {
+    console.log('Buscando áreas de atuação para o profissional ID:', profissionalId);
+    
+    const { data, error: areasError } = await supabase
+      .from('areas_atuacao')
+      .select(`
+        bairro_id,
+        bairros:bairro_id(
+          id,
+          nome,
+          cidade_id,
+          cidades:cidade_id(
+            id,
+            nome,
+            uf
+          )
+        )
+      `)
+      .eq('profissional_id', profissionalId);
+    
+    if (areasError) throw areasError;
+    
+    // Processar e atualizar as áreas de atuação
+    if (data && data.length > 0) {
+      areasAtuacao.value = data.map((area: any) => ({
+        bairroId: area.bairro_id,
+        bairroNome: area.bairros?.nome,
+        cidadeId: area.bairros?.cidade_id,
+        cidadeNome: area.bairros?.cidades?.nome,
+        uf: area.bairros?.cidades?.uf
+      }));
+      
+      // Atualizar cidade e bairro do profissional com a primeira área de atuação
+      if (areasAtuacao.value.length > 0) {
+        profissional.value.cidade = areasAtuacao.value[0].cidadeNome;
+        profissional.value.uf = areasAtuacao.value[0].uf;
+        profissional.value.bairro = areasAtuacao.value[0].bairroNome;
+      }
+      
+      console.log('Áreas de atuação encontradas:', areasAtuacao.value.length);
+    } else {
+      console.log('Nenhuma área de atuação encontrada para o profissional');
+      areasAtuacao.value = [];
+    }
+  } catch (err) {
+    console.error('Erro ao buscar áreas de atuação:', err);
+    areasAtuacao.value = [];
+  }
+};
+
+// Propriedade computada para obter a cidade principal
+const primaryCity = computed(() => {
+  if (areasAtuacao.value.length > 0) {
+    return areasAtuacao.value[0].cidadeNome;
+  }
+  return profissional.value.cidade || 'São Paulo';
+});
 
 onMounted(() => {
   fetchProfissional();
@@ -265,6 +332,13 @@ onMounted(() => {
                 :class="activeTab === 'galeria' ? 'border-destack-pink text-destack-pink' : 'border-transparent text-gray-500 hover:text-gray-700'"
               >
                 Galeria
+              </button>
+              <button 
+                @click="activeTab = 'localizacao'" 
+                class="px-3 sm:px-4 md:px-6 py-4 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                :class="activeTab === 'localizacao' ? 'border-destack-pink text-destack-pink' : 'border-transparent text-gray-500 hover:text-gray-700'"
+              >
+                Localização
               </button>
             </nav>
           </div>
@@ -400,6 +474,47 @@ onMounted(() => {
                 </div>
                 <div class="ml-3">
                   <p>Clique em um horário para agendar diretamente pelo WhatsApp. Os horários exibidos estão sujeitos à confirmação de disponibilidade.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Aba Localização -->
+          <div v-else-if="activeTab === 'localizacao'">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-xl font-semibold text-gray-800">Áreas de Atendimento</h2>
+            </div>
+            
+            <!-- Lista de cidades e bairros -->
+            <div class="mb-6">
+              <h3 class="text-lg font-medium text-gray-700 mb-3">Locais de Atendimento</h3>
+              <div v-if="areasAtuacao.length > 0">
+                <ul class="space-y-2 text-gray-600">
+                  <li v-for="(area, index) in areasAtuacao" :key="index" class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-destack-pink mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                    </svg>
+                    <span><strong>{{ area.cidadeNome }}/{{ area.uf }}</strong> - {{ area.bairroNome }}</span>
+                  </li>
+                </ul>
+              </div>
+              <div v-else class="text-center py-4 text-gray-500">
+                <p>Nenhuma área de atendimento cadastrada para este profissional.</p>
+              </div>
+            </div>
+            
+            <!-- Mapa da cidade -->
+            <div>
+              <h3 class="text-lg font-medium text-gray-700 mb-3">Mapa de Atendimento</h3>
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <div v-if="areasAtuacao.length > 0">
+                  <CityMap :city-name="primaryCity" :areas="areasAtuacao" />
+                </div>
+                <div v-else class="bg-gray-100 h-64 flex items-center justify-center text-gray-500">
+                  <p>Nenhuma área de atendimento cadastrada</p>
+                </div>
+                <div class="bg-gray-50 py-2 px-3 text-xs text-gray-500 text-right">
+                  Áreas em verde: zonas de atendimento
                 </div>
               </div>
             </div>
